@@ -36,6 +36,7 @@
           type="file"
           id="gallery-input"
           accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
+          multiple
           hidden
         />
 
@@ -46,11 +47,11 @@
           </button>
           <button type="button" id="gallery-btn" class="upload-btn upload-btn-secondary">
             <span class="upload-icon" aria-hidden="true">🖼️</span>
-            Choose Photo
+            Choose Photos
           </button>
         </div>
 
-        <p id="hint" class="hint">Photos only · JPG, PNG, HEIC, and more</p>
+        <p id="hint" class="hint">Photos only · select one or more from your gallery</p>
 
         <div id="preview-area" class="preview-area hidden">
           <img id="preview" alt="Selected photo preview" />

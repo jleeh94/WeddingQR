@@ -32,6 +32,7 @@ function setButtonsDisabled(disabled) {
 
 function resetUI() {
   progressArea.classList.add("hidden");
+  previewArea.classList.add("hidden");
   progressFill.style.width = "0%";
   progressText.textContent = "Uploading…";
   setButtonsDisabled(false);
@@ -45,6 +46,20 @@ function isPhoto(file) {
   return /\.(jpe?g|png|webp|heic|heif|gif)$/i.test(file.name);
 }
 
+function setProgress(completedCount, totalCount, filePercent = 0) {
+  const overall = ((completedCount + filePercent / 100) / totalCount) * 100;
+  progressFill.style.width = `${Math.round(overall)}%`;
+
+  if (totalCount === 1) {
+    progressText.textContent = filePercent ? `Uploading… ${Math.round(filePercent)}%` : "Uploading…";
+    return;
+  }
+
+  progressText.textContent = filePercent
+    ? `Uploading photo ${completedCount + 1} of ${totalCount}… ${Math.round(filePercent)}%`
+    : `Uploading photo ${completedCount + 1} of ${totalCount}…`;
+}
+
 cameraBtn.addEventListener("click", () => {
   cameraInput.click();
 });
@@ -53,46 +68,77 @@ galleryBtn.addEventListener("click", () => {
   galleryInput.click();
 });
 
-async function handleFileSelected(file) {
-  if (!file) {
+async function handleFilesSelected(files) {
+  const photos = [...files].filter(isPhoto);
+
+  if (photos.length === 0) {
+    setStatus("Please choose at least one photo.", "error");
     return;
   }
 
-  if (!isPhoto(file)) {
-    setStatus("Please choose a photo file.", "error");
-    return;
+  if (photos.length < files.length) {
+    setStatus("Some files were skipped — photos only.", "error");
+  } else {
+    setStatus("");
   }
 
-  setStatus("");
-  preview.src = URL.createObjectURL(file);
-  previewArea.classList.remove("hidden");
+  if (photos.length === 1) {
+    preview.src = URL.createObjectURL(photos[0]);
+    previewArea.classList.remove("hidden");
+  } else {
+    previewArea.classList.add("hidden");
+  }
+
   setButtonsDisabled(true);
   progressArea.classList.remove("hidden");
+  setProgress(0, photos.length);
+
+  let uploaded = 0;
 
   try {
-    const contentType = file.type || "image/jpeg";
-    const { uploadUrl } = await requestUploadUrl(contentType);
+    for (let index = 0; index < photos.length; index += 1) {
+      const file = photos[index];
+      const contentType = file.type || "image/jpeg";
+      const { uploadUrl } = await requestUploadUrl(contentType);
 
-    await uploadToS3(uploadUrl, file, contentType);
+      await uploadToS3(uploadUrl, file, contentType, index, photos.length);
+      uploaded += 1;
+      setProgress(uploaded, photos.length);
+    }
 
-    setStatus("Thank you! Your photo was uploaded.", "success");
+    const label = uploaded === 1 ? "photo was" : "photos were";
+    setStatus(`Thank you! ${uploaded} ${label} uploaded.`, "success");
     previewArea.classList.add("hidden");
   } catch (err) {
     console.error(err);
-    setStatus(err.message || "Upload failed. Please try again.", "error");
+    if (uploaded > 0) {
+      setStatus(
+        `${uploaded} of ${photos.length} uploaded. ${err.message || "Please try again."}`,
+        "error"
+      );
+    } else {
+      setStatus(err.message || "Upload failed. Please try again.", "error");
+    }
   } finally {
     resetUI();
   }
 }
 
-function handleInputChange(event) {
-  const file = event.target.files[0];
+cameraInput.addEventListener("change", (event) => {
+  const files = event.target.files;
   event.target.value = "";
-  handleFileSelected(file);
-}
+  if (files.length) {
+    handleFilesSelected(files);
+  }
+});
 
-cameraInput.addEventListener("change", handleInputChange);
-galleryInput.addEventListener("change", handleInputChange);
+galleryInput.addEventListener("change", (event) => {
+  const files = event.target.files;
+  event.target.value = "";
+  if (files.length) {
+    handleFilesSelected(files);
+  }
+});
 
 async function requestUploadUrl(contentType) {
   const response = await fetch("/api/upload-url", {
@@ -110,7 +156,7 @@ async function requestUploadUrl(contentType) {
   return data;
 }
 
-function uploadToS3(uploadUrl, file, contentType) {
+function uploadToS3(uploadUrl, file, contentType, fileIndex, totalFiles) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", uploadUrl);
@@ -121,15 +167,12 @@ function uploadToS3(uploadUrl, file, contentType) {
         return;
       }
 
-      const percent = Math.round((event.loaded / event.total) * 100);
-      progressFill.style.width = `${percent}%`;
-      progressText.textContent = `Uploading… ${percent}%`;
+      const percent = (event.loaded / event.total) * 100;
+      setProgress(fileIndex, totalFiles, percent);
     });
 
     xhr.addEventListener("load", () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        progressFill.style.width = "100%";
-        progressText.textContent = "Done!";
         resolve();
         return;
       }

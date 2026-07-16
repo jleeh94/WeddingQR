@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Share Your Photos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="overlay"></div>
+
+    <main class="container">
+      <header class="header">
+        <p class="eyebrow">You're invited to celebrate with us</p>
+        <h1>Share Your Photos</h1>
+        <p class="subtitle">
+          Snap a moment from today and upload it here so we can keep every memory.
+        </p>
+      </header>
+
+      <section class="upload-card">
+        <input
+          type="file"
+          id="file-input"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
+          capture="environment"
+          hidden
+        />
+
+        <button type="button" id="upload-btn" class="upload-btn">
+          <span class="upload-icon" aria-hidden="true">📷</span>
+          Upload Photo
+        </button>
+
+        <p id="hint" class="hint">Photos only · JPG, PNG, HEIC, and more</p>
+
+        <div id="preview-area" class="preview-area hidden">
+          <img id="preview" alt="Selected photo preview" />
+        </div>
+
+        <div id="progress-area" class="progress-area hidden">
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <p id="progress-text">Uploading…</p>
+        </div>
+
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -13,18 +13,11 @@ body {
 body {
   font-family: "Inter", system-ui, sans-serif;
   color: #fff;
-  background: #1a1410 url("/background.png") center / cover no-repeat fixed;
+  background: linear-gradient(160deg, #2a1f18 0%, #1a1410 45%, #3d2b22 100%);
 }
 
 .overlay {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(20, 14, 10, 0.55) 0%,
-    rgba(20, 14, 10, 0.75) 100%
-  );
-  pointer-events: none;
+  display: none;
 }
 
 .container {
@@ -73,13 +66,6 @@ h1 {
   .container {
     justify-content: flex-start;
     padding-top: 1.25rem;
-  }
-}
-
-@media (max-width: 480px) {
-  body {
-    background-size: min(88vw, 520px);
-    background-attachment: scroll;
   }
 }
 

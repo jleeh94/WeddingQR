@@ -47,6 +47,9 @@ function getS3Client() {
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+app.get("/wedding-bg.jpg", (_req, res) => {
+  res.sendFile(path.join(__dirname, "wedding-bg.jpg"));
+});
 
 app.get("/api/health", (_req, res) => {
   const configured = Boolean(

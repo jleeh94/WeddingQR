@@ -30,12 +30,22 @@ function setButtonsDisabled(disabled) {
   });
 }
 
-function resetUI() {
-  progressArea.classList.add("hidden");
+function startUploadUI() {
   previewArea.classList.add("hidden");
+  progressArea.classList.remove("hidden");
   progressFill.style.width = "0%";
-  progressText.textContent = "Uploading…";
+  progressText.textContent = "Preparing upload…";
+  setButtonsDisabled(true);
+}
+
+function finishUploadUI(totalCount, success) {
   setButtonsDisabled(false);
+
+  if (success) {
+    progressFill.style.width = "100%";
+    progressText.textContent =
+      totalCount === 1 ? "Upload complete!" : `All ${totalCount} photos uploaded!`;
+  }
 }
 
 function isPhoto(file) {
@@ -51,13 +61,21 @@ function setProgress(completedCount, totalCount, filePercent = 0) {
   progressFill.style.width = `${Math.round(overall)}%`;
 
   if (totalCount === 1) {
-    progressText.textContent = filePercent ? `Uploading… ${Math.round(filePercent)}%` : "Uploading…";
+    progressText.textContent = filePercent
+      ? `Uploading… ${Math.round(filePercent)}%`
+      : "Uploading…";
     return;
   }
 
   progressText.textContent = filePercent
     ? `Uploading photo ${completedCount + 1} of ${totalCount}… ${Math.round(filePercent)}%`
     : `Uploading photo ${completedCount + 1} of ${totalCount}…`;
+}
+
+function getFilesFromInput(input) {
+  const files = Array.from(input.files || []);
+  input.value = "";
+  return files;
 }
 
 cameraBtn.addEventListener("click", () => {
@@ -69,7 +87,7 @@ galleryBtn.addEventListener("click", () => {
 });
 
 async function handleFilesSelected(files) {
-  const photos = [...files].filter(isPhoto);
+  const photos = files.filter(isPhoto);
 
   if (photos.length === 0) {
     setStatus("Please choose at least one photo.", "error");
@@ -85,12 +103,9 @@ async function handleFilesSelected(files) {
   if (photos.length === 1) {
     preview.src = URL.createObjectURL(photos[0]);
     previewArea.classList.remove("hidden");
-  } else {
-    previewArea.classList.add("hidden");
   }
 
-  setButtonsDisabled(true);
-  progressArea.classList.remove("hidden");
+  startUploadUI();
   setProgress(0, photos.length);
 
   let uploaded = 0;
@@ -109,6 +124,7 @@ async function handleFilesSelected(files) {
     const label = uploaded === 1 ? "photo was" : "photos were";
     setStatus(`Thank you! ${uploaded} ${label} uploaded.`, "success");
     previewArea.classList.add("hidden");
+    finishUploadUI(uploaded, true);
   } catch (err) {
     console.error(err);
     if (uploaded > 0) {
@@ -119,22 +135,19 @@ async function handleFilesSelected(files) {
     } else {
       setStatus(err.message || "Upload failed. Please try again.", "error");
     }
-  } finally {
-    resetUI();
+    finishUploadUI(photos.length, false);
   }
 }
 
-cameraInput.addEventListener("change", (event) => {
-  const files = event.target.files;
-  event.target.value = "";
+cameraInput.addEventListener("change", () => {
+  const files = getFilesFromInput(cameraInput);
   if (files.length) {
     handleFilesSelected(files);
   }
 });
 
-galleryInput.addEventListener("change", (event) => {
-  const files = event.target.files;
-  event.target.value = "";
+galleryInput.addEventListener("change", () => {
+  const files = getFilesFromInput(galleryInput);
   if (files.length) {
     handleFilesSelected(files);
   }

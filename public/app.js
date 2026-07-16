@@ -110,7 +110,7 @@ function uploadToS3(uploadUrl, file) {
         return;
       }
 
-      reject(new Error("Upload failed. Please try again."));
+      reject(new Error(`Upload failed (${xhr.status}). Check S3 permissions and CORS.`));
     });
 
     xhr.addEventListener("error", () => {

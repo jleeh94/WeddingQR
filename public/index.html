@@ -27,17 +27,30 @@
       <section class="upload-card">
         <input
           type="file"
-          id="file-input"
+          id="camera-input"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
+          capture="environment"
+          hidden
+        />
+        <input
+          type="file"
+          id="gallery-input"
           accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/gif"
           hidden
         />
 
-        <button type="button" id="upload-btn" class="upload-btn">
-          <span class="upload-icon" aria-hidden="true">📷</span>
-          Upload Photo
-        </button>
+        <div class="upload-actions">
+          <button type="button" id="camera-btn" class="upload-btn">
+            <span class="upload-icon" aria-hidden="true">📷</span>
+            Take Photo
+          </button>
+          <button type="button" id="gallery-btn" class="upload-btn upload-btn-secondary">
+            <span class="upload-icon" aria-hidden="true">🖼️</span>
+            Choose Photo
+          </button>
+        </div>
 
-        <p id="hint" class="hint">Photos only · choose from gallery or take a new one</p>
+        <p id="hint" class="hint">Photos only · JPG, PNG, HEIC, and more</p>
 
         <div id="preview-area" class="preview-area hidden">
           <img id="preview" alt="Selected photo preview" />

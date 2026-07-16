@@ -7,8 +7,11 @@ const ALLOWED_TYPES = [
   "image/gif",
 ];
 
-const fileInput = document.getElementById("file-input");
-const uploadBtn = document.getElementById("upload-btn");
+const cameraInput = document.getElementById("camera-input");
+const galleryInput = document.getElementById("gallery-input");
+const cameraBtn = document.getElementById("camera-btn");
+const galleryBtn = document.getElementById("gallery-btn");
+const uploadButtons = [cameraBtn, galleryBtn];
 const previewArea = document.getElementById("preview-area");
 const preview = document.getElementById("preview");
 const progressArea = document.getElementById("progress-area");
@@ -21,25 +24,36 @@ function setStatus(message, type = "") {
   statusEl.className = `status ${type}`.trim();
 }
 
+function setButtonsDisabled(disabled) {
+  uploadButtons.forEach((button) => {
+    button.disabled = disabled;
+  });
+}
+
 function resetUI() {
   progressArea.classList.add("hidden");
   progressFill.style.width = "0%";
   progressText.textContent = "Uploading…";
-  uploadBtn.disabled = false;
+  setButtonsDisabled(false);
 }
 
 function isPhoto(file) {
-  return ALLOWED_TYPES.includes(file.type);
+  if (ALLOWED_TYPES.includes(file.type)) {
+    return true;
+  }
+
+  return /\.(jpe?g|png|webp|heic|heif|gif)$/i.test(file.name);
 }
 
-uploadBtn.addEventListener("click", () => {
-  fileInput.click();
+cameraBtn.addEventListener("click", () => {
+  cameraInput.click();
 });
 
-fileInput.addEventListener("change", async () => {
-  const file = fileInput.files[0];
-  fileInput.value = "";
+galleryBtn.addEventListener("click", () => {
+  galleryInput.click();
+});
 
+async function handleFileSelected(file) {
   if (!file) {
     return;
   }
@@ -52,13 +66,14 @@ fileInput.addEventListener("change", async () => {
   setStatus("");
   preview.src = URL.createObjectURL(file);
   previewArea.classList.remove("hidden");
-  uploadBtn.disabled = true;
+  setButtonsDisabled(true);
   progressArea.classList.remove("hidden");
 
   try {
-    const { uploadUrl } = await requestUploadUrl(file.type);
+    const contentType = file.type || "image/jpeg";
+    const { uploadUrl } = await requestUploadUrl(contentType);
 
-    await uploadToS3(uploadUrl, file);
+    await uploadToS3(uploadUrl, file, contentType);
 
     setStatus("Thank you! Your photo was uploaded.", "success");
     previewArea.classList.add("hidden");
@@ -68,7 +83,16 @@ fileInput.addEventListener("change", async () => {
   } finally {
     resetUI();
   }
-});
+}
+
+function handleInputChange(event) {
+  const file = event.target.files[0];
+  event.target.value = "";
+  handleFileSelected(file);
+}
+
+cameraInput.addEventListener("change", handleInputChange);
+galleryInput.addEventListener("change", handleInputChange);
 
 async function requestUploadUrl(contentType) {
   const response = await fetch("/api/upload-url", {
@@ -86,11 +110,11 @@ async function requestUploadUrl(contentType) {
   return data;
 }
 
-function uploadToS3(uploadUrl, file) {
+function uploadToS3(uploadUrl, file, contentType) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", uploadUrl);
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.setRequestHeader("Content-Type", contentType);
 
     xhr.upload.addEventListener("progress", (event) => {
       if (!event.lengthComputable) {
